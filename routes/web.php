@@ -1,0 +1,6 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+
+Route::get('/login', fn () => 'login')->name('login');
+Route::get('/', fn () => 'dashboard')->name('dashboard');
