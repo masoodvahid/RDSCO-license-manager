@@ -1,8 +1,8 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use App\Services\Licensing\NonceGuard;
+use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+// Optional: only runs if a cron job calls "schedule:run". Without it,
+// expired nonces are also pruned opportunistically during API requests.
+Schedule::call(fn () => app(NonceGuard::class)->prune())->hourly()->name('prune-api-nonces');

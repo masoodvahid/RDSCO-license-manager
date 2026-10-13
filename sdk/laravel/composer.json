@@ -1,0 +1,29 @@
+{
+    "name": "rdsco/license-client",
+    "description": "Laravel client for the RDSCO License Manager: license verification with signed offline tokens, Shahkar and error reporting.",
+    "type": "library",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^11.0|^12.0|^13.0",
+        "illuminate/http": "^11.0|^12.0|^13.0",
+        "illuminate/cache": "^11.0|^12.0|^13.0",
+        "paragonie/sodium_compat": "^2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Rdsco\\LicenseClient\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Rdsco\\LicenseClient\\LicenseClientServiceProvider"
+            ],
+            "aliases": {
+                "RdscoLicense": "Rdsco\\LicenseClient\\Facades\\RdscoLicense"
+            }
+        }
+    },
+    "minimum-stability": "stable"
+}

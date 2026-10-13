@@ -52,9 +52,9 @@ class AuthenticateLicense
             return ApiResponse::error('payload_too_large', 'حجم درخواست بیش از حد مجاز است.', 413);
         }
 
-        if (abs(time() - (int) $timestamp) > max(30, (int) config('license.signature_tolerance_seconds', 300))) {
+        if (abs(now()->getTimestamp() - (int) $timestamp) > max(30, (int) config('license.signature_tolerance_seconds', 300))) {
             return $this->reject($request, 'stale_request', 'زمان درخواست معتبر نیست. ساعت سرور برنامه را بررسی کنید.', 401, [
-                'server_time' => time(),
+                'server_time' => now()->getTimestamp(),
             ]);
         }
 

@@ -1,0 +1,164 @@
+name: Build Release Package
+
+# Builds the production package for every published GitHub release and
+# attaches it to the release. The server installs it from the admin panel
+# (System update page); this workflow never connects to the server.
+#
+# Release tags must look like v1.2.3 (or 1.2.3).
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing release tag to (re)build, e.g. v1.2.3'
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-package-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+env:
+  RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+  PACKAGE_NAME: rdsco-release.zip
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate release tag
+        run: |
+          if ! [[ "$RELEASE_TAG" =~ ^v?[0-9]+(\.[0-9]+){0,3}([-+][0-9A-Za-z.-]+)?$ ]]; then
+            echo "ERROR: Release tag '$RELEASE_TAG' must look like v1.2.3"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, intl, bcmath, curl, dom, fileinfo, openssl, pdo_mysql, pdo_sqlite, sqlite3, sodium, zip
+          coverage: none
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-php84-composer-${{ hashFiles('composer.lock') }}
+          restore-keys: ${{ runner.os }}-php84-composer-
+
+      - name: Install dependencies and run tests
+        run: |
+          composer install --prefer-dist --no-interaction --no-progress
+          cp .env.example .env
+          php artisan key:generate --ansi
+          php artisan test
+          rm -f .env
+
+      - name: Install production dependencies
+        run: |
+          composer install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader
+          test -f vendor/autoload.php
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Build frontend assets
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+
+      - name: Prepare package directories
+        run: |
+          rm -rf .package "$PACKAGE_NAME" "$PACKAGE_NAME.sha256"
+          mkdir -p .package/core .package/public_html
+
+          rsync -a ./ .package/core/ \
+            --exclude='/.git/' \
+            --exclude='/.github/' \
+            --exclude='/.package/' \
+            --exclude='/.env' \
+            --exclude='/.env.*' \
+            --exclude='/node_modules/' \
+            --exclude='/storage/' \
+            --exclude='/tests/' \
+            --exclude='/sdk/' \
+            --exclude='/database/*.sqlite' \
+            --exclude='/.phpunit.result.cache' \
+            --exclude='/.phpunit.cache/'
+
+          rsync -a public/ .package/public_html/ \
+            --exclude='/storage' \
+            --exclude='/.well-known' \
+            --exclude='/.user.ini' \
+            --exclude='/php.ini' \
+            --exclude='/github-deploy-handler.php'
+
+          sed -i "s#__DIR__.'/../#__DIR__.'/../core/#g" .package/public_html/index.php
+
+          # Version marker read by the in-app updater.
+          jq -n \
+            --arg version "$RELEASE_TAG" \
+            --arg commit "$GITHUB_SHA" \
+            --arg built_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{version: $version, commit: $commit, built_at: $built_at}' \
+            > .package/core/release.json
+
+      - name: Validate package directories
+        run: |
+          for required in core/artisan core/vendor/autoload.php core/bootstrap/app.php core/release.json core/public/build/manifest.json public_html/index.php public_html/.htaccess public_html/build/manifest.json; do
+            test -f ".package/$required" || { echo "ERROR: $required is missing"; exit 1; }
+          done
+
+          for forbidden in core/.env core/storage public_html/storage public_html/.well-known public_html/.user.ini public_html/php.ini; do
+            if [ -e ".package/$forbidden" ]; then
+              echo "ERROR: $forbidden must not be packaged"
+              exit 1
+            fi
+          done
+
+          grep -q "../core/vendor/autoload.php" .package/public_html/index.php || { echo "ERROR: vendor path was not converted"; exit 1; }
+          grep -q "../core/bootstrap/app.php" .package/public_html/index.php || { echo "ERROR: bootstrap path was not converted"; exit 1; }
+
+      - name: Create package and checksum
+        run: |
+          (cd .package && zip -r -9 -q "../$PACKAGE_NAME" core public_html)
+          unzip -t "$PACKAGE_NAME" > /dev/null
+
+          if unzip -Z1 "$PACKAGE_NAME" | grep -E '^(core/\.env($|\.)|core/storage($|/)|public_html/storage($|/)|public_html/\.well-known($|/)|public_html/\.user\.ini$|public_html/php\.ini$)'; then
+            echo "ERROR: Protected path found inside the package."
+            exit 1
+          fi
+
+          sha256sum "$PACKAGE_NAME" > "$PACKAGE_NAME.sha256"
+          ls -lh "$PACKAGE_NAME"
+
+      - name: Attach package to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "$RELEASE_TAG" "$PACKAGE_NAME" "$PACKAGE_NAME.sha256" --clobber
+
+      - name: Summary
+        run: |
+          {
+            echo "## Release package ready"
+            echo ""
+            echo "**Version:** $RELEASE_TAG"
+            echo "**Package:** $PACKAGE_NAME ($(du -h "$PACKAGE_NAME" | cut -f1))"
+            echo ""
+            echo "Install it from the admin panel: بروزرسانی → نصب نسخه."
+          } >> "$GITHUB_STEP_SUMMARY"
