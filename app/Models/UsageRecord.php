@@ -24,6 +24,7 @@ class UsageRecord extends Model
         'reference',
         'client_reference',
         'upstream_code',
+        'upstream_message',
         'duration_ms',
     ];
 

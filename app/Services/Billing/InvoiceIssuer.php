@@ -10,6 +10,7 @@ use App\Models\Service;
 use App\Models\Setting;
 use App\Models\UsageRecord;
 use App\Support\Jalali;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -131,7 +132,7 @@ class InvoiceIssuer
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<UsageRecord>
+     * @return Builder<UsageRecord>
      */
     private function uninvoiced(Customer $customer, ?Carbon $until)
     {

@@ -53,7 +53,7 @@ final class Jalali
         }
 
         try {
-            return Carbon::instance(Verta::create($year, $month, $day, 0, 0, 0, config('app.timezone'))->datetime())->startOfDay();
+            return Carbon::instance(Verta::createJalali($year, $month, $day, 0, 0, 0, config('app.timezone'))->datetime())->startOfDay();
         } catch (Throwable) {
             return null;
         }

@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Middleware\EnsureTwoFactorVerified;
 use App\Support\ApiResponse;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -29,10 +28,6 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->redirectGuestsTo(fn (): string => route('login'));
         $middleware->redirectUsersTo(fn (): string => route('dashboard'));
-
-        $middleware->alias([
-            'two-factor' => EnsureTwoFactorVerified::class,
-        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

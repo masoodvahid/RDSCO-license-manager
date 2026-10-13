@@ -11,6 +11,13 @@ use Illuminate\Testing\TestResponse;
 
 abstract class TestCase extends BaseTestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->withoutVite();
+    }
+
     /**
      * Send a request signed exactly like a client application would.
      *
@@ -44,9 +51,8 @@ abstract class TestCase extends BaseTestCase
 
     protected function actingAsAdmin(): User
     {
-        $admin = User::factory()->create();
+        $admin = User::factory()->create()->fresh();
         $this->actingAs($admin);
-        $this->withSession(['two_factor_passed' => true]);
 
         return $admin;
     }

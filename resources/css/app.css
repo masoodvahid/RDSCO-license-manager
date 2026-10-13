@@ -1,0 +1,81 @@
+@import 'tailwindcss';
+@import 'vazirmatn/Vazirmatn-Variable-font-face.css';
+
+@source '../views';
+@source '../../app/Livewire';
+@source '../../app/Enums';
+
+@theme {
+    --font-sans: 'Vazirmatn', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+
+    --color-brand-50: #eef5ff;
+    --color-brand-100: #d9e8ff;
+    --color-brand-200: #bcd7ff;
+    --color-brand-500: #2f6fed;
+    --color-brand-600: #1f57d6;
+    --color-brand-700: #1b46ad;
+    --color-brand-800: #1c3d8a;
+}
+
+@layer base {
+    html {
+        -webkit-font-smoothing: antialiased;
+        font-feature-settings: 'ss01';
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+
+    /* Livewire shows these while a request is running. */
+    [wire\:loading],
+    [wire\:loading\.delay] {
+        display: none;
+    }
+
+    input[type='number']::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+    }
+}
+
+@layer components {
+    .field {
+        @apply block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-xs outline-none transition
+            placeholder:text-gray-400 focus:border-brand-500 focus:ring-3 focus:ring-brand-100 disabled:bg-gray-50 disabled:text-gray-500;
+    }
+
+    .field-error {
+        @apply border-red-400 focus:border-red-500 focus:ring-red-100;
+    }
+
+    .table-base {
+        @apply min-w-full divide-y divide-gray-200 text-sm;
+    }
+
+    .table-base th {
+        @apply whitespace-nowrap bg-gray-50 px-4 py-2.5 text-start text-xs font-medium text-gray-500;
+    }
+
+    .table-base td {
+        @apply whitespace-nowrap px-4 py-3 text-gray-700;
+    }
+
+    .table-base tbody {
+        @apply divide-y divide-gray-100 bg-white;
+    }
+
+    .table-base tbody tr {
+        @apply transition hover:bg-gray-50/70;
+    }
+
+    .ltr-value {
+        direction: ltr;
+        unicode-bidi: isolate;
+        @apply font-mono text-[13px];
+    }
+
+    .link {
+        @apply font-medium text-brand-600 hover:text-brand-700 hover:underline;
+    }
+}

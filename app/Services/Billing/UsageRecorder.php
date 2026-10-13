@@ -22,6 +22,7 @@ class UsageRecorder
         ?string $clientReference = null,
         ?int $upstreamCode = null,
         ?int $durationMs = null,
+        ?string $upstreamMessage = null,
     ): UsageRecord {
         return UsageRecord::query()->create([
             'customer_id' => $license->customerId,
@@ -33,6 +34,7 @@ class UsageRecorder
             'reference' => $reference,
             'client_reference' => $clientReference,
             'upstream_code' => $upstreamCode,
+            'upstream_message' => $upstreamMessage === null ? null : mb_substr($upstreamMessage, 0, 255),
             'duration_ms' => $durationMs,
         ]);
     }

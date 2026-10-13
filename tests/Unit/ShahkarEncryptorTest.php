@@ -4,6 +4,8 @@ namespace Tests\Unit;
 
 use App\Services\Shahkar\ShahkarEncryptor;
 use Jose\Component\Core\AlgorithmManager;
+use Jose\Component\Core\JWK;
+use Jose\Component\Core\Util\ECKey;
 use Jose\Component\Encryption\Algorithm\ContentEncryption\A256GCM;
 use Jose\Component\Encryption\Algorithm\KeyEncryption\ECDHESA256KW;
 use Jose\Component\Encryption\JWEDecrypter;
@@ -39,7 +41,7 @@ class ShahkarEncryptorTest extends TestCase
      */
     private static function publicKeyPem(array $jwk): string
     {
-        $key = openssl_pkey_get_details(openssl_pkey_get_public(\Jose\Component\Core\Util\ECKey::convertPublicKeyToPEM(new \Jose\Component\Core\JWK($jwk))));
+        $key = openssl_pkey_get_details(openssl_pkey_get_public(ECKey::convertPublicKeyToPEM(new JWK($jwk))));
 
         return $key['key'];
     }

@@ -14,6 +14,7 @@ use App\Services\Licensing\LicensePolicy;
 use App\Services\Shahkar\ShahkarClient;
 use App\Services\Shahkar\ShahkarResponseCodes;
 use App\Support\ApiResponse;
+use App\Support\Jalali;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -75,6 +76,7 @@ class ShahkarController extends Controller
             clientReference: $result->isAnswer() ? $reference : null,
             upstreamCode: $result->code,
             durationMs: $result->durationMs,
+            upstreamMessage: $result->message,
         );
 
         $this->activity->touchLastSeen($license, $request->ip(), null);
@@ -119,7 +121,7 @@ class ShahkarController extends Controller
      */
     public static function normalizeMobile(string $mobile): string
     {
-        $digits = preg_replace('/\D/', '', \App\Support\Jalali::toLatinDigits($mobile)) ?? '';
+        $digits = preg_replace('/\D/', '', Jalali::toLatinDigits($mobile)) ?? '';
 
         return match (true) {
             str_starts_with($digits, '0098') => '0'.substr($digits, 4),

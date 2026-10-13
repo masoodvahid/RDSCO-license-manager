@@ -54,6 +54,7 @@ return new class extends Migration
             $table->string('reference', 64)->nullable();
             $table->string('client_reference', 64)->nullable();
             $table->smallInteger('upstream_code')->nullable();
+            $table->string('upstream_message')->nullable();
             $table->unsignedInteger('duration_ms')->nullable();
             $table->foreignId('invoice_id')->nullable()->constrained()->nullOnDelete();
             $table->timestamp('created_at')->useCurrent();
