@@ -17,4 +17,8 @@ require __DIR__.'/../vendor/autoload.php';
 /** @var Application $app */
 $app = require_once __DIR__.'/../bootstrap/app.php';
 
+// The document root may be a separate folder from the application (core/ + public_html/),
+// so public_path() must point at the folder that is actually served.
+$app->usePublicPath(__DIR__);
+
 $app->handleRequest(Request::capture());
