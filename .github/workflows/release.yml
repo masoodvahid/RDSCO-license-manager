@@ -82,6 +82,17 @@ jobs:
           npm ci --no-audit --no-fund
           npm run build
 
+      # Many shared hosts (nginx in front of Apache) serve *.js directly and
+      # never hand Livewire's dynamic script route to PHP. Shipping the files
+      # as real assets under public_html/vendor/livewire avoids that.
+      - name: Publish Livewire assets
+        run: |
+          cp .env.example .env
+          php artisan key:generate --ansi
+          php artisan vendor:publish --tag=livewire:assets --force --no-interaction
+          rm -f .env
+          test -f public/vendor/livewire/manifest.json
+
       - name: Prepare package directories
         run: |
           rm -rf .package "$PACKAGE_NAME" "$PACKAGE_NAME.sha256"
@@ -120,7 +131,7 @@ jobs:
 
       - name: Validate package directories
         run: |
-          for required in core/artisan core/vendor/autoload.php core/bootstrap/app.php core/release.json core/public/build/manifest.json public_html/index.php public_html/.htaccess public_html/build/manifest.json; do
+          for required in core/artisan core/vendor/autoload.php core/bootstrap/app.php core/release.json core/public/build/manifest.json public_html/index.php public_html/.htaccess public_html/build/manifest.json public_html/vendor/livewire/manifest.json public_html/vendor/livewire/livewire.js; do
             test -f ".package/$required" || { echo "ERROR: $required is missing"; exit 1; }
           done
 
