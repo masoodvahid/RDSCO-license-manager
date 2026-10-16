@@ -57,6 +57,33 @@
                 @endif
             </x-card>
 
+            <x-card title="گزارش تماس‌ها" :padding="false">
+                <form wire:submit="addContact" class="space-y-3 border-b border-gray-100 p-5">
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <x-input name="contactDate" label="تاریخ" placeholder="۱۴۰۵/۰۱/۳۱" ltr />
+                        <x-select name="contactChannel" label="روش" :options="$channelOptions" placeholder="—" />
+                    </div>
+                    <x-textarea name="contactSummary" label="شرح گفتگو" rows="2" />
+                    <div class="flex justify-end">
+                        <x-button type="submit" size="sm" icon="heroicon-o-plus" wire:target="addContact">ثبت گزارش</x-button>
+                    </div>
+                </form>
+                @forelse ($contacts as $contact)
+                    <div wire:key="contact-{{ $contact->id }}" class="group flex gap-4 border-b border-gray-100 px-5 py-3 text-sm last:border-0">
+                        <div class="w-24 shrink-0">
+                            <div class="font-medium text-gray-800">{{ Jalali::date($contact->contacted_on) }}</div>
+                            @if ($contact->channel)<div class="mt-1"><x-badge>{{ $contact->channel->label() }}</x-badge></div>@endif
+                        </div>
+                        <p class="flex-1 whitespace-pre-line leading-7 text-gray-700">{{ $contact->summary }}</p>
+                        <button type="button" wire:click="deleteContact({{ $contact->id }})" wire:confirm="این گزارش حذف شود؟" class="self-start text-gray-300 hover:text-red-600" title="حذف">
+                            <x-heroicon-o-trash class="size-4" />
+                        </button>
+                    </div>
+                @empty
+                    <x-empty icon="heroicon-o-chat-bubble-left-right" title="هنوز گزارشی ثبت نشده است" />
+                @endforelse
+            </x-card>
+
             <x-card title="فاکتورها" :padding="false">
                 <x-slot:actions>
                     @if ($preview['count'] > 0)
@@ -98,13 +125,30 @@
                         'موبایل' => $customer->mobile,
                         'ایمیل' => $customer->email,
                         'کد ملی / شناسه ملی' => $customer->national_id,
-                        'کد اقتصادی' => $customer->economic_code,
+                        'شماره ثبت' => $customer->registration_number,
+                        'کد پستی' => $customer->postal_code,
                     ] as $label => $value)
                         <div class="flex justify-between gap-4">
                             <dt class="text-gray-500">{{ $label }}</dt>
                             <dd class="ltr-value text-gray-800">{{ $value ?: '—' }}</dd>
                         </div>
                     @endforeach
+                    @if ($customer->websiteUrl())
+                        <div class="flex justify-between gap-4">
+                            <dt class="text-gray-500">سایت</dt>
+                            <dd><a href="{{ $customer->websiteUrl() }}" target="_blank" rel="noopener noreferrer" class="link ltr-value">{{ preg_replace('#^https?://#i', '', rtrim($customer->website, '/')) }}</a></dd>
+                        </div>
+                    @endif
+                    @if ($customer->channels())
+                        <div class="flex justify-between gap-4">
+                            <dt class="text-gray-500">روش ارتباط</dt>
+                            <dd class="flex flex-wrap justify-end gap-1">
+                                @foreach ($customer->channels() as $channel)
+                                    <x-badge>{{ $channel->label() }}</x-badge>
+                                @endforeach
+                            </dd>
+                        </div>
+                    @endif
                     @if ($customer->address)
                         <div>
                             <dt class="text-gray-500">نشانی</dt>

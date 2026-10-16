@@ -42,8 +42,8 @@
             <div class="font-semibold">خریدار: {{ $invoice->customer?->display_name }}</div>
             @if ($invoice->customer?->company_name)<div>نماینده: {{ $invoice->customer->name }}</div>@endif
             @if ($invoice->customer?->national_id)<div>شناسه/کد ملی: {{ $invoice->customer->national_id }}</div>@endif
-            @if ($invoice->customer?->economic_code)<div>کد اقتصادی: {{ $invoice->customer->economic_code }}</div>@endif
-            @if ($invoice->customer?->address)<div>نشانی: {{ $invoice->customer->address }}</div>@endif
+            @if ($invoice->customer?->registration_number)<div>شماره ثبت: {{ $invoice->customer->registration_number }}</div>@endif
+            @if ($invoice->customer?->address)<div>نشانی: {{ $invoice->customer->address }}@if ($invoice->customer->postal_code) — کد پستی: {{ $invoice->customer->postal_code }}@endif</div>@endif
             <div class="text-gray-600">دوره مصرف: {{ Jalali::date($invoice->period_start) }} تا {{ Jalali::date($invoice->period_end) }}</div>
         </section>
 

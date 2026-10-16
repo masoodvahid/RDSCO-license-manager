@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ContactChannel;
 use App\Enums\CustomerStatus;
 use App\Enums\InvoiceStatus;
 use Database\Factories\CustomerFactory;
@@ -20,10 +21,13 @@ class Customer extends Model
         'name',
         'company_name',
         'national_id',
-        'economic_code',
+        'registration_number',
         'mobile',
         'email',
+        'website',
+        'contact_channels',
         'address',
+        'postal_code',
         'status',
         'notes',
     ];
@@ -32,6 +36,7 @@ class Customer extends Model
     {
         return [
             'status' => CustomerStatus::class,
+            'contact_channels' => 'array',
         ];
     }
 
@@ -64,6 +69,35 @@ class Customer extends Model
     public function servicePrices(): HasMany
     {
         return $this->hasMany(CustomerServicePrice::class);
+    }
+
+    public function contacts(): HasMany
+    {
+        return $this->hasMany(CustomerContact::class);
+    }
+
+    /**
+     * Preferred messengers, in the order they are offered in the form.
+     *
+     * @return list<ContactChannel>
+     */
+    public function channels(): array
+    {
+        $selected = (array) ($this->contact_channels ?? []);
+
+        return array_values(array_filter(ContactChannel::cases(), fn (ContactChannel $channel): bool => in_array($channel->value, $selected, true)));
+    }
+
+    /**
+     * Website as a clickable absolute URL.
+     */
+    public function websiteUrl(): ?string
+    {
+        if (blank($this->website)) {
+            return null;
+        }
+
+        return preg_match('#^https?://#i', $this->website) === 1 ? $this->website : 'https://'.$this->website;
     }
 
     public function getDisplayNameAttribute(): string

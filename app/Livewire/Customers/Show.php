@@ -2,13 +2,17 @@
 
 namespace App\Livewire\Customers;
 
+use App\Enums\ContactChannel;
 use App\Enums\InvoiceStatus;
 use App\Models\ActivityLog;
 use App\Models\Customer;
 use App\Models\CustomerServicePrice;
 use App\Models\Service;
 use App\Services\Billing\InvoiceIssuer;
+use App\Support\Jalali;
 use App\Support\Money;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 
 class Show extends Component
@@ -18,10 +22,48 @@ class Show extends Component
     /** @var array<int, string> service id => custom price (empty = default) */
     public array $prices = [];
 
+    public string $contactDate = '';
+
+    public string $contactChannel = '';
+
+    public string $contactSummary = '';
+
     public function mount(Customer $customer): void
     {
         $this->customer = $customer;
+        $this->contactDate = Jalali::date(today());
         $this->loadPrices();
+    }
+
+    public function addContact(): void
+    {
+        $this->validate([
+            'contactDate' => ['required', 'string'],
+            'contactChannel' => ['nullable', Rule::enum(ContactChannel::class)],
+            'contactSummary' => ['required', 'string', 'max:5000'],
+        ], [
+            'contactSummary.required' => 'شرح گفتگو را بنویسید.',
+        ]);
+
+        $contactedOn = Jalali::parse($this->contactDate)
+            ?? throw ValidationException::withMessages(['contactDate' => 'تاریخ را به شکل ۱۴۰۵/۰۱/۳۱ وارد کنید.']);
+
+        $this->customer->contacts()->create([
+            'contacted_on' => $contactedOn,
+            'channel' => $this->contactChannel === '' ? null : $this->contactChannel,
+            'summary' => trim($this->contactSummary),
+        ]);
+
+        $this->reset('contactChannel', 'contactSummary');
+        $this->contactDate = Jalali::date(today());
+        $this->resetErrorBag();
+        $this->dispatch('toast', type: 'success', message: 'گزارش تماس ثبت شد.');
+    }
+
+    public function deleteContact(int $id): void
+    {
+        $this->customer->contacts()->whereKey($id)->delete();
+        $this->dispatch('toast', type: 'success', message: 'گزارش تماس حذف شد.');
     }
 
     public function savePrices(): void
@@ -75,6 +117,8 @@ class Show extends Component
             'invoices' => $this->customer->invoices()->latest('id')->limit(8)->get(),
             'payments' => $this->customer->payments()->latest('paid_on')->limit(8)->get(),
             'services' => Service::query()->orderBy('id')->get(),
+            'contacts' => $this->customer->contacts()->orderByDesc('contacted_on')->orderByDesc('id')->get(),
+            'channelOptions' => ContactChannel::options(),
             'preview' => app(InvoiceIssuer::class)->preview($this->customer),
             'invoiced' => $invoiced,
             'paid' => $paid,

@@ -52,6 +52,54 @@ class PanelActionsTest extends TestCase
         $this->assertTrue(ActivityLog::query()->where('action', 'customer.created')->exists());
     }
 
+    public function test_customer_contact_details_are_saved(): void
+    {
+        Livewire::test(CustomerForm::class)
+            ->set('name', 'مریم احمدی')
+            ->set('registration_number', '123456')
+            ->set('postal_code', '۱۲۳۴۵۶۷۸۹۰')
+            ->set('website', 'example.com')
+            ->set('contact_channels', ['telegram', 'email'])
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $customer = Customer::query()->sole();
+        $this->assertSame('123456', $customer->registration_number);
+        $this->assertSame('1234567890', $customer->postal_code);
+        $this->assertSame('https://example.com', $customer->websiteUrl());
+        $this->assertSame(['telegram', 'email'], $customer->contact_channels);
+
+        Livewire::test(CustomerForm::class, ['customer' => $customer])
+            ->assertSet('contact_channels', ['telegram', 'email'])
+            ->set('postal_code', '123')
+            ->set('contact_channels', ['fax'])
+            ->call('save')
+            ->assertHasErrors(['postal_code', 'contact_channels.0']);
+    }
+
+    public function test_contact_log_entries_can_be_added_and_removed(): void
+    {
+        $customer = Customer::factory()->create();
+
+        $component = Livewire::test(CustomerShow::class, ['customer' => $customer])
+            ->set('contactDate', '۱۴۰۵/۰۷/۲۰')
+            ->set('contactChannel', 'bale')
+            ->set('contactSummary', 'درباره تمدید لایسنس صحبت شد.')
+            ->call('addContact')
+            ->assertHasNoErrors()
+            ->assertSet('contactSummary', '')
+            ->assertSee('درباره تمدید لایسنس صحبت شد.');
+
+        $contact = $customer->contacts()->sole();
+        $this->assertSame('2026-10-12', $contact->contacted_on->toDateString());
+        $this->assertSame('bale', $contact->channel->value);
+
+        $component->set('contactSummary', '')->call('addContact')->assertHasErrors('contactSummary');
+
+        $component->call('deleteContact', $contact->id);
+        $this->assertSame(0, $customer->contacts()->count());
+    }
+
     public function test_a_license_is_issued_with_restrictions_and_its_secret_is_shown_once(): void
     {
         $customer = Customer::factory()->create();

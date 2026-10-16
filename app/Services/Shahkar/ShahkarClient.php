@@ -206,7 +206,20 @@ class ShahkarClient
      */
     private function newRequestId(string $rid): string
     {
-        return $rid.now()->format('YmdHisu');
+        // Shahkar rejects a reused requestId (code 312). Retries inside one PHP
+        // process can land on the same clock tick, so keep the stamp strictly
+        // increasing within the process.
+        static $last = null;
+
+        $moment = now();
+
+        if ($last !== null && $moment->lte($last)) {
+            $moment = $last->copy()->addMicrosecond();
+        }
+
+        $last = $moment;
+
+        return $rid.$moment->format('YmdHisu');
     }
 
     private function pause(int $attempt): void
