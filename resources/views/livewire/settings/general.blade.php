@@ -9,7 +9,6 @@
                     <x-input name="settings.company_name" label="نام شرکت" />
                     <x-input name="settings.company_phone" label="تلفن" ltr />
                     <x-input name="settings.company_national_id" label="شناسه ملی" ltr />
-                    <x-input name="settings.company_economic_code" label="کد اقتصادی" ltr />
                     <x-input name="settings.company_address" label="نشانی" class="sm:col-span-2" />
                     <x-textarea name="settings.company_payment_note" label="توضیح پرداخت (مثلاً شماره شبا)" rows="2" class="sm:col-span-2" />
                 </div>

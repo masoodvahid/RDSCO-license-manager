@@ -14,7 +14,6 @@ class General extends Component
     public const FIELDS = [
         'company.name' => 'نام فروشنده',
         'company.national_id' => 'شناسه ملی',
-        'company.economic_code' => 'کد اقتصادی',
         'company.phone' => 'تلفن',
         'company.address' => 'نشانی',
         'company.payment_note' => 'توضیح پرداخت در فاکتور',
@@ -36,7 +35,6 @@ class General extends Component
         $this->validate([
             'settings.company_name' => ['nullable', 'string', 'max:255'],
             'settings.company_national_id' => ['nullable', 'string', 'max:20'],
-            'settings.company_economic_code' => ['nullable', 'string', 'max:20'],
             'settings.company_phone' => ['nullable', 'string', 'max:50'],
             'settings.company_address' => ['nullable', 'string', 'max:500'],
             'settings.company_payment_note' => ['nullable', 'string', 'max:1000'],

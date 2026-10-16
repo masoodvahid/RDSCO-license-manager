@@ -32,7 +32,6 @@
             <div class="text-left text-sm leading-6 text-gray-700" dir="rtl">
                 <div class="font-semibold text-gray-900">{{ $company['name'] ?: config('app.name') }}</div>
                 @if ($company['national_id'])<div>شناسه ملی: {{ $company['national_id'] }}</div>@endif
-                @if ($company['economic_code'])<div>کد اقتصادی: {{ $company['economic_code'] }}</div>@endif
                 @if ($company['address'])<div>{{ $company['address'] }}</div>@endif
                 @if ($company['phone'])<div>تلفن: <span class="ltr-value">{{ $company['phone'] }}</span></div>@endif
             </div>
@@ -42,7 +41,6 @@
             <div class="font-semibold">خریدار: {{ $invoice->customer?->display_name }}</div>
             @if ($invoice->customer?->company_name)<div>نماینده: {{ $invoice->customer->name }}</div>@endif
             @if ($invoice->customer?->national_id)<div>شناسه/کد ملی: {{ $invoice->customer->national_id }}</div>@endif
-            @if ($invoice->customer?->registration_number)<div>شماره ثبت: {{ $invoice->customer->registration_number }}</div>@endif
             @if ($invoice->customer?->address)<div>نشانی: {{ $invoice->customer->address }}@if ($invoice->customer->postal_code) — کد پستی: {{ $invoice->customer->postal_code }}@endif</div>@endif
             <div class="text-gray-600">دوره مصرف: {{ Jalali::date($invoice->period_start) }} تا {{ Jalali::date($invoice->period_end) }}</div>
         </section>

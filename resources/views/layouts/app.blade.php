@@ -94,6 +94,9 @@
                     خروج
                 </button>
             </form>
+            <a href="{{ route('system.update') }}" wire:navigate class="mt-2 block px-3 text-xs text-gray-400 hover:text-gray-600" title="بروزرسانی">
+                {{ \App\Support\AppVersion::label() }}
+            </a>
         </div>
     </aside>
 

@@ -18,7 +18,6 @@ class InvoicePrintController extends Controller
             'company' => [
                 'name' => Setting::get('company.name'),
                 'national_id' => Setting::get('company.national_id'),
-                'economic_code' => Setting::get('company.economic_code'),
                 'address' => Setting::get('company.address'),
                 'phone' => Setting::get('company.phone'),
                 'payment_note' => Setting::get('company.payment_note'),
