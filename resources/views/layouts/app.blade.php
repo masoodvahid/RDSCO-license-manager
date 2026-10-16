@@ -12,14 +12,14 @@
     @php
         $navigation = [
             ['route' => 'dashboard', 'match' => 'dashboard', 'label' => 'داشبورد', 'icon' => 'heroicon-o-squares-2x2'],
+            ['route' => 'products.index', 'match' => 'products.*', 'label' => 'محصولات', 'icon' => 'heroicon-o-cube'],
             ['route' => 'customers.index', 'match' => 'customers.*', 'label' => 'مشتری‌ها', 'icon' => 'heroicon-o-user-group'],
             ['route' => 'licenses.index', 'match' => 'licenses.*', 'label' => 'لایسنس‌ها', 'icon' => 'heroicon-o-key'],
-            ['route' => 'products.index', 'match' => 'products.*', 'label' => 'محصولات', 'icon' => 'heroicon-o-cube'],
             ['divider' => 'مالی'],
+            ['route' => 'services.index', 'match' => 'services.*', 'label' => 'تعرفه‌ها', 'icon' => 'heroicon-o-tag'],
             ['route' => 'usage.index', 'match' => 'usage.*', 'label' => 'مصرف سرویس‌ها', 'icon' => 'heroicon-o-chart-bar'],
-            ['route' => 'invoices.index', 'match' => 'invoices.*', 'label' => 'فاکتورها', 'icon' => 'heroicon-o-document-text'],
             ['route' => 'payments.index', 'match' => 'payments.*', 'label' => 'پرداخت‌ها', 'icon' => 'heroicon-o-banknotes'],
-            ['route' => 'services.index', 'match' => 'services.*', 'label' => 'سرویس‌ها و تعرفه', 'icon' => 'heroicon-o-tag'],
+            ['route' => 'invoices.index', 'match' => 'invoices.*', 'label' => 'فاکتورها', 'icon' => 'heroicon-o-document-text'],
             ['divider' => 'پایش'],
             ['route' => 'errors.index', 'match' => 'errors.*', 'label' => 'خطاهای سامانه‌ها', 'icon' => 'heroicon-o-bug-ant', 'badge' => \App\Models\AppError::query()->where('status', 'open')->count()],
             ['route' => 'activity.index', 'match' => 'activity.*', 'label' => 'گزارش فعالیت', 'icon' => 'heroicon-o-clock'],

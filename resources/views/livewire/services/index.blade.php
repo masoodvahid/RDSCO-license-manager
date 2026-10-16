@@ -1,5 +1,5 @@
 <div>
-    <x-page-header title="سرویس‌ها و تعرفه" description="قیمت هر درخواست موفق. تعرفه اختصاصی هر مشتری از صفحه همان مشتری تنظیم می‌شود." />
+    <x-page-header title="تعرفه‌ها" description="قیمت هر درخواست موفق. تعرفه اختصاصی هر مشتری از صفحه همان مشتری تنظیم می‌شود." />
 
     <form wire:submit="save">
         <x-card :padding="false">

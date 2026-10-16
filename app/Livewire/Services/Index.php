@@ -8,7 +8,7 @@ use App\Support\Money;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-#[Title('سرویس‌ها و تعرفه')]
+#[Title('تعرفه‌ها')]
 class Index extends Component
 {
     /** @var array<int, array{name: string, unit_price: string, is_active: bool}> */
