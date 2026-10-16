@@ -6,10 +6,14 @@
     <form wire:submit="save" class="space-y-6">
         <x-card title="مشخصات">
             <div class="grid gap-4 sm:grid-cols-2">
-                <x-input name="name" label="نام و نام خانوادگی / نام رابط" required />
+                <x-select name="type" label="نوع مشتری" :options="$types" live required />
+                <div class="hidden sm:block"></div>
+                <x-input name="name" :label="$type === 'legal' ? 'نام رابط' : 'نام و نام خانوادگی'" required />
                 <x-input name="company_name" label="نام شرکت" hint="در صورت وجود، در فاکتور و فهرست‌ها نمایش داده می‌شود." />
-                <x-input name="national_id" label="کد ملی / شناسه ملی" ltr />
-                <x-input name="registration_number" label="شماره ثبت" ltr />
+                <x-input name="national_id" :label="$nationalIdLabel" inputmode="numeric" :maxlength="$type === 'legal' ? 11 : 10" ltr wire:key="national-id-{{ $type }}" />
+                @if ($type === 'legal')
+                    <x-input name="registration_number" label="شماره ثبت" ltr />
+                @endif
             </div>
         </x-card>
 

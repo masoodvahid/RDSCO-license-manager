@@ -8,6 +8,7 @@
     <x-page-header :title="$customer->display_name" :description="$customer->company_name ? $customer->name : null">
         <x-slot:breadcrumb><a href="{{ route('customers.index') }}" wire:navigate class="hover:text-gray-700">مشتری‌ها</a></x-slot:breadcrumb>
         <x-slot:actions>
+            <x-badge>{{ $customer->type->label() }}</x-badge>
             <x-badge :color="$customer->status->color()">{{ $customer->status->label() }}</x-badge>
             <x-button variant="secondary" :href="route('customers.edit', $customer)" icon="heroicon-o-pencil-square" wire:navigate>ویرایش</x-button>
             <x-button :href="route('licenses.create', ['customer' => $customer->id])" icon="heroicon-o-plus" wire:navigate>لایسنس جدید</x-button>
@@ -124,8 +125,8 @@
                     @foreach ([
                         'موبایل' => $customer->mobile,
                         'ایمیل' => $customer->email,
-                        'کد ملی / شناسه ملی' => $customer->national_id,
-                        'شماره ثبت' => $customer->registration_number,
+                        $customer->nationalIdLabel() => $customer->national_id,
+                        ...($customer->isLegal() ? ['شماره ثبت' => $customer->registration_number] : []),
                         'کد پستی' => $customer->postal_code,
                     ] as $label => $value)
                         <div class="flex justify-between gap-4">

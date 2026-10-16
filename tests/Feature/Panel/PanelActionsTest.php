@@ -55,7 +55,9 @@ class PanelActionsTest extends TestCase
     public function test_customer_contact_details_are_saved(): void
     {
         Livewire::test(CustomerForm::class)
+            ->set('type', 'legal')
             ->set('name', 'مریم احمدی')
+            ->set('national_id', '10101234567')
             ->set('registration_number', '123456')
             ->set('postal_code', '۱۲۳۴۵۶۷۸۹۰')
             ->set('website', 'example.com')
@@ -65,6 +67,7 @@ class PanelActionsTest extends TestCase
 
         $customer = Customer::query()->sole();
         $this->assertSame('123456', $customer->registration_number);
+        $this->assertSame('شناسه ملی', $customer->nationalIdLabel());
         $this->assertSame('1234567890', $customer->postal_code);
         $this->assertSame('https://example.com', $customer->websiteUrl());
         $this->assertSame(['telegram', 'email'], $customer->contact_channels);
@@ -73,8 +76,20 @@ class PanelActionsTest extends TestCase
             ->assertSet('contact_channels', ['telegram', 'email'])
             ->set('postal_code', '123')
             ->set('contact_channels', ['fax'])
+            ->set('national_id', '1234')
             ->call('save')
-            ->assertHasErrors(['postal_code', 'contact_channels.0']);
+            ->assertHasErrors(['postal_code', 'contact_channels.0', 'national_id']);
+
+        // A natural person needs a valid 10-digit national code and has no registration number.
+        Livewire::test(CustomerForm::class, ['customer' => $customer])
+            ->set('type', 'individual')
+            ->set('national_id', '0499370899')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $customer->refresh();
+        $this->assertSame('کد ملی', $customer->nationalIdLabel());
+        $this->assertNull($customer->registration_number);
     }
 
     public function test_contact_log_entries_can_be_added_and_removed(): void

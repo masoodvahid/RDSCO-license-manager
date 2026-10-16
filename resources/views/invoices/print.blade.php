@@ -40,7 +40,7 @@
         <section class="mt-6 rounded-lg bg-gray-50 p-4 text-sm leading-7">
             <div class="font-semibold">خریدار: {{ $invoice->customer?->display_name }}</div>
             @if ($invoice->customer?->company_name)<div>نماینده: {{ $invoice->customer->name }}</div>@endif
-            @if ($invoice->customer?->national_id)<div>شناسه/کد ملی: {{ $invoice->customer->national_id }}</div>@endif
+            @if ($invoice->customer?->national_id)<div>{{ $invoice->customer->nationalIdLabel() }}: {{ $invoice->customer->national_id }}</div>@endif
             @if ($invoice->customer?->address)<div>نشانی: {{ $invoice->customer->address }}@if ($invoice->customer->postal_code) — کد پستی: {{ $invoice->customer->postal_code }}@endif</div>@endif
             <div class="text-gray-600">دوره مصرف: {{ Jalali::date($invoice->period_start) }} تا {{ Jalali::date($invoice->period_end) }}</div>
         </section>

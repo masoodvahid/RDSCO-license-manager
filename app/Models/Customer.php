@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ContactChannel;
 use App\Enums\CustomerStatus;
+use App\Enums\CustomerType;
 use App\Enums\InvoiceStatus;
 use Database\Factories\CustomerFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -17,7 +18,12 @@ class Customer extends Model
     /** @use HasFactory<CustomerFactory> */
     use HasFactory, SoftDeletes;
 
+    protected $attributes = [
+        'type' => 'individual',
+    ];
+
     protected $fillable = [
+        'type',
         'name',
         'company_name',
         'national_id',
@@ -35,6 +41,7 @@ class Customer extends Model
     protected function casts(): array
     {
         return [
+            'type' => CustomerType::class,
             'status' => CustomerStatus::class,
             'contact_channels' => 'array',
         ];
@@ -98,6 +105,19 @@ class Customer extends Model
         }
 
         return preg_match('#^https?://#i', $this->website) === 1 ? $this->website : 'https://'.$this->website;
+    }
+
+    public function isLegal(): bool
+    {
+        return $this->type === CustomerType::Legal;
+    }
+
+    /**
+     * «کد ملی» for natural persons, «شناسه ملی» for legal entities.
+     */
+    public function nationalIdLabel(): string
+    {
+        return ($this->type ?? CustomerType::Individual)->nationalIdLabel();
     }
 
     public function getDisplayNameAttribute(): string
