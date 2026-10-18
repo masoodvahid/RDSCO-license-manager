@@ -8,6 +8,7 @@ use App\Models\License;
 use App\Models\Service;
 use App\Models\Setting;
 use App\Models\UsageRecord;
+use App\Services\Shahkar\ShahkarCircuit;
 use App\Services\Shahkar\ShahkarEncryptor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
@@ -128,6 +129,47 @@ class ShahkarApiTest extends TestCase
         $this->assertSame(UsageStatus::Error, $record->status);
         $this->assertFalse($record->billable);
         $this->assertSame(0, $record->unit_price);
+    }
+
+    public function test_the_circuit_opens_after_repeated_connection_failures_and_fails_fast(): void
+    {
+        Http::fake([
+            self::TOKEN_URL => Http::response(['access_token' => 'token-1', 'token_type' => 'bearer', 'expires_in' => 359]),
+            self::VERIFY_URL => Http::failedConnection(),
+        ]);
+
+        // Two calls x three attempts = six transport failures, above the threshold of five.
+        foreach ([1, 2] as $call) {
+            $this->signedJson($this->license, 'POST', self::PATH, $this->validInput())
+                ->assertStatus(504)
+                ->assertJsonPath('error.code', 'shahkar_connection');
+        }
+
+        $sent = count(Http::recorded());
+
+        $this->signedJson($this->license, 'POST', self::PATH, $this->validInput())
+            ->assertStatus(503)
+            ->assertJsonPath('error.code', 'shahkar_circuit_open')
+            ->assertJsonPath('error.retryable', true);
+
+        $this->assertCount($sent, Http::recorded(), 'No request may reach the gateway while the circuit is open.');
+        $this->assertSame(0, UsageRecord::query()->where('billable', true)->count());
+
+        // After a reset (e.g. saving settings), calls go through again.
+        app(ShahkarCircuit::class)->reset();
+        $this->assertFalse(app(ShahkarCircuit::class)->isOpen());
+    }
+
+    public function test_business_answers_do_not_count_against_the_circuit(): void
+    {
+        config(['license.shahkar.circuit_threshold' => 2]);
+        $this->fakeGateway([$this->answer(600), $this->answer(600), $this->answer(600)]);
+
+        foreach ([1, 2, 3] as $call) {
+            $this->signedJson($this->license, 'POST', self::PATH, $this->validInput())->assertOk();
+        }
+
+        $this->assertFalse(app(ShahkarCircuit::class)->isOpen());
     }
 
     public function test_transient_failures_are_retried_with_a_new_request_id(): void

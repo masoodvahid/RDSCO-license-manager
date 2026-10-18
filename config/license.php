@@ -56,6 +56,19 @@ return [
     |--------------------------------------------------------------------------
     */
 
+    /*
+    | Shahkar calls hold a PHP worker while the gateway answers. The deadline
+    | caps one call (retries included) below typical max_execution_time, and
+    | the circuit breaker fails fast for a while after repeated transport
+    | failures so a gateway outage cannot exhaust the host's workers.
+    */
+    'shahkar' => [
+        'deadline_seconds' => (int) env('SHAHKAR_DEADLINE_SECONDS', 15),
+        'circuit_threshold' => (int) env('SHAHKAR_CIRCUIT_THRESHOLD', 5),
+        'circuit_window_seconds' => 60,
+        'circuit_cooldown_seconds' => (int) env('SHAHKAR_CIRCUIT_COOLDOWN', 30),
+    ],
+
     'rate_limits' => [
         'verify' => (int) env('LICENSE_RATE_VERIFY', 120),
         'shahkar' => (int) env('LICENSE_RATE_SHAHKAR', 60),

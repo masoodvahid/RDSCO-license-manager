@@ -25,7 +25,8 @@
             ['route' => 'activity.index', 'match' => 'activity.*', 'label' => 'گزارش فعالیت', 'icon' => 'heroicon-o-clock'],
             ['divider' => 'سیستم'],
             ['route' => 'settings.general', 'match' => 'settings.*', 'label' => 'تنظیمات', 'icon' => 'heroicon-o-cog-6-tooth'],
-            ['route' => 'system.update', 'match' => 'system.*', 'label' => 'بروزرسانی', 'icon' => 'heroicon-o-arrow-path'],
+            ['route' => 'system.update', 'match' => 'system.update', 'label' => 'بروزرسانی', 'icon' => 'heroicon-o-arrow-path'],
+            ['route' => 'system.health', 'match' => 'system.health', 'label' => 'سلامت سامانه', 'icon' => 'heroicon-o-heart'],
             ['route' => 'docs', 'match' => 'docs', 'label' => 'مستندات API', 'icon' => 'heroicon-o-book-open'],
         ];
     @endphp

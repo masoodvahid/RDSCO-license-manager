@@ -2,6 +2,7 @@
 
 namespace App\Services\Shahkar;
 
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
@@ -25,7 +26,12 @@ class SitaadTokenProvider
 
     private const EXPIRY_MARGIN_SECONDS = 30;
 
-    public function token(ShahkarSettings $settings): string
+    private float $timeout = 8.0;
+
+    /**
+     * @param  float  $maxSeconds  time budget for waiting on and fetching a new token
+     */
+    public function token(ShahkarSettings $settings, float $maxSeconds = 11.0): string
     {
         $cached = $this->cached(self::ACCESS_TOKEN_KEY, $settings);
 
@@ -33,10 +39,20 @@ class SitaadTokenProvider
             return $cached;
         }
 
-        return Cache::lock('shahkar:token-lock', 20)->block(10, function () use ($settings): string {
-            // Another request may have refreshed it while we waited.
-            return $this->cached(self::ACCESS_TOKEN_KEY, $settings) ?? $this->fetch($settings);
-        });
+        if ($maxSeconds < 1.0) {
+            throw new ShahkarException('token', 'timeout', 'زمان مجاز برای دریافت توکن سیتاد تمام شد.', retryable: true);
+        }
+
+        $this->timeout = min(8.0, $maxSeconds);
+
+        try {
+            return Cache::lock('shahkar:token-lock', 20)->block((int) max(1, min(10, floor($maxSeconds / 2))), function () use ($settings): string {
+                // Another request may have refreshed it while we waited.
+                return $this->cached(self::ACCESS_TOKEN_KEY, $settings) ?? $this->fetch($settings);
+            });
+        } catch (LockTimeoutException) {
+            throw new ShahkarException('token', 'timeout', 'دریافت توکن سیتاد بیش از حد طول کشید.', retryable: true);
+        }
     }
 
     public function forget(): void
@@ -95,8 +111,8 @@ class SitaadTokenProvider
             return Http::asForm()
                 ->acceptJson()
                 ->withHeaders(['Authorization' => $settings->gatewayAuthorizationHeader()])
-                ->connectTimeout(3)
-                ->timeout(8)
+                ->connectTimeout(min(3.0, $this->timeout))
+                ->timeout($this->timeout)
                 ->withoutRedirecting()
                 ->post($settings->tokenUrl, $form);
         } catch (ConnectionException) {

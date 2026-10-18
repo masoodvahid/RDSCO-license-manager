@@ -53,6 +53,7 @@ Route::middleware('auth')->group(function (): void {
     Route::livewire('/docs', Livewire\Docs::class)->name('docs');
 
     Route::livewire('/system/update', Livewire\System\Update::class)->name('system.update');
+    Route::livewire('/system/health', Livewire\System\Health::class)->name('system.health');
 
     // In-app updater steps (JSON), driven by the System update page.
     Route::prefix('system-update')

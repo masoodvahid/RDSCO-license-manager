@@ -17,6 +17,10 @@ use Throwable;
  * a limited number of times with backoff and jitter. Every attempt uses a new
  * request id and freshly encrypted values, because Shahkar rejects repeated
  * request ids (312).
+ *
+ * The whole call, retries and token renewal included, stays within one time
+ * budget (license.shahkar.deadline_seconds), and a circuit breaker fails fast
+ * while the gateway is down, so a slow gateway cannot exhaust PHP workers.
  */
 class ShahkarClient
 {
@@ -24,11 +28,17 @@ class ShahkarClient
 
     private const MAX_RESPONSE_BYTES = 1_048_576;
 
+    /** An attempt with less time than this left is not worth starting. */
+    private const MIN_ATTEMPT_SECONDS = 3.0;
+
+    private const MAX_REQUEST_SECONDS = 10.0;
+
     public function __construct(
         private readonly ShahkarEncryptor $encryptor,
         private readonly SitaadTokenProvider $tokens,
         private readonly ShahkarResponseCodes $businessCodes,
         private readonly SitaadGatewayCodes $gatewayCodes,
+        private readonly ShahkarCircuit $circuit,
     ) {}
 
     public function verify(string $nationalCode, string $mobile, ?ShahkarSettings $settings = null): ShahkarResult
@@ -41,11 +51,30 @@ class ShahkarClient
                 throw new ShahkarException('configuration', 'configuration', 'تنظیمات اتصال شاهکار کامل نیست.');
             }
 
+            if ($this->circuit->isOpen()) {
+                return $this->circuitOpenResult($startedAt);
+            }
+
+            $deadline = $startedAt + (int) (max(5, (int) config('license.shahkar.deadline_seconds', 15)) * 1e9);
             $attempts = count(self::RETRY_DELAYS_MS) + 1;
             $tokenRenewed = false;
 
             for ($attempt = 1; ; $attempt++) {
-                $result = $this->attempt($settings, $nationalCode, $mobile, $startedAt);
+                try {
+                    $result = $this->attempt($settings, $nationalCode, $mobile, $startedAt, $deadline);
+                } catch (ShahkarException $exception) {
+                    if ($exception->category === 'connection') {
+                        $this->circuit->recordFailure();
+                    }
+
+                    throw $exception;
+                }
+
+                if (ShahkarCircuit::isTransportFailure($result)) {
+                    $this->circuit->recordFailure();
+                } else {
+                    $this->circuit->recordSuccess();
+                }
 
                 // An expired or revoked token: get a new one once, then retry immediately.
                 if ($result->code === 401 && $result->stage === 'gateway' && ! $tokenRenewed) {
@@ -60,6 +89,13 @@ class ShahkarClient
                     return $result;
                 }
 
+                // Not enough time left for a useful retry, or the gateway was just declared down.
+                $delayMs = self::RETRY_DELAYS_MS[$attempt - 1];
+
+                if ($this->remainingSeconds($deadline) - $delayMs / 1000 < self::MIN_ATTEMPT_SECONDS || $this->circuit->isOpen()) {
+                    return $result;
+                }
+
                 $this->pause($attempt);
             }
         } catch (ShahkarException $exception) {
@@ -67,7 +103,7 @@ class ShahkarClient
         }
     }
 
-    private function attempt(ShahkarSettings $settings, string $nationalCode, string $mobile, int $startedAt): ShahkarResult
+    private function attempt(ShahkarSettings $settings, string $nationalCode, string $mobile, int $startedAt, int $deadline): ShahkarResult
     {
         $requestId = $this->newRequestId($settings->rid);
 
@@ -85,7 +121,12 @@ class ShahkarClient
             throw new ShahkarException('encryption', 'encryption', 'رمزنگاری اطلاعات ناموفق بود. کلید عمومی شاهکار را بررسی کنید.');
         }
 
-        $accessToken = $this->tokens->token($settings);
+        $accessToken = $this->tokens->token($settings, $this->remainingSeconds($deadline));
+        $timeout = min(self::MAX_REQUEST_SECONDS, $this->remainingSeconds($deadline));
+
+        if ($timeout < 1.0) {
+            throw new ShahkarException('verify', 'timeout', 'سیتاد در زمان مجاز پاسخ نداد.', retryable: true);
+        }
 
         try {
             $response = Http::acceptJson()
@@ -95,8 +136,8 @@ class ShahkarClient
                     'Authorization' => 'Bearer '.$accessToken,
                     'basicAuthorization' => $settings->craAuthorizationHeader(),
                 ])
-                ->connectTimeout(3)
-                ->timeout(10)
+                ->connectTimeout(min(3.0, $timeout))
+                ->timeout($timeout)
                 ->withoutRedirecting()
                 ->withOptions(['on_headers' => function (ResponseInterface $response): void {
                     if ((int) $response->getHeaderLine('Content-Length') > self::MAX_RESPONSE_BYTES) {
@@ -229,6 +270,29 @@ class ShahkarClient
         }
 
         usleep((self::RETRY_DELAYS_MS[$attempt - 1] + random_int(0, 150)) * 1000);
+    }
+
+    private function remainingSeconds(int $deadline): float
+    {
+        return max(0.0, ($deadline - hrtime(true)) / 1e9);
+    }
+
+    private function circuitOpenResult(int $startedAt): ShahkarResult
+    {
+        $seconds = max(1, (int) $this->circuit->openUntil() - time());
+
+        return new ShahkarResult(
+            matched: null,
+            code: 0,
+            category: 'circuit_open',
+            message: "سیتاد چند بار پشت سر هم پاسخ نداد. استعلام‌ها حدود {$seconds} ثانیه متوقف است؛ کمی بعد دوباره تلاش کنید.",
+            retryable: true,
+            httpStatus: 503,
+            trackingId: null,
+            requestId: null,
+            durationMs: $this->elapsed($startedAt),
+            stage: 'gateway',
+        );
     }
 
     private function elapsed(int $startedAt): int

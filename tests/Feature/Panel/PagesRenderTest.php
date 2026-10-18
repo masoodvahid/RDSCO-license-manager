@@ -49,6 +49,7 @@ class PagesRenderTest extends TestCase
 
         $pages = [
             route('dashboard'),
+            route('system.health'),
             route('customers.index'),
             route('customers.create'),
             route('customers.show', $license->customer),

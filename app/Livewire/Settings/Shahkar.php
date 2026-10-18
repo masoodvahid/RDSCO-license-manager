@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\ShahkarController;
 use App\Models\ActivityLog;
 use App\Models\Setting;
 use App\Rules\IranianNationalCode;
+use App\Services\Shahkar\ShahkarCircuit;
 use App\Services\Shahkar\ShahkarClient;
 use App\Services\Shahkar\ShahkarException;
 use App\Services\Shahkar\ShahkarSettings;
@@ -72,6 +73,7 @@ class Shahkar extends Component
         }
 
         $tokens->forgetAll();
+        app(ShahkarCircuit::class)->reset();
 
         foreach (ShahkarSettings::FIELDS as $key => [$label, $isSecret]) {
             if ($isSecret) {
@@ -105,6 +107,9 @@ class Shahkar extends Component
 
     public function testVerification(ShahkarClient $client): void
     {
+        // A manual test should reach the gateway even if the circuit is open.
+        app(ShahkarCircuit::class)->reset();
+
         $this->testMobile = ShahkarController::normalizeMobile($this->testMobile);
 
         $this->validate([

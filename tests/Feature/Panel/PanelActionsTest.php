@@ -13,6 +13,7 @@ use App\Livewire\Licenses\Form as LicenseForm;
 use App\Livewire\Licenses\Show as LicenseShow;
 use App\Livewire\Payments\Index as Payments;
 use App\Livewire\Settings\Shahkar as ShahkarSettingsPage;
+use App\Livewire\System\Health;
 use App\Models\ActivityLog;
 use App\Models\Customer;
 use App\Models\Invoice;
@@ -21,6 +22,7 @@ use App\Models\Product;
 use App\Models\Service;
 use App\Models\Setting;
 use App\Models\UsageRecord;
+use App\Services\Shahkar\ShahkarCircuit;
 use App\Support\Jalali;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -50,6 +52,21 @@ class PanelActionsTest extends TestCase
         $customer = Customer::query()->sole();
         $this->assertSame('شرکت نمونه', $customer->display_name);
         $this->assertTrue(ActivityLog::query()->where('action', 'customer.created')->exists());
+    }
+
+    public function test_the_shahkar_circuit_can_be_reopened_from_the_health_page(): void
+    {
+        config(['license.shahkar.circuit_threshold' => 1]);
+        $circuit = app(ShahkarCircuit::class);
+        $circuit->recordFailure();
+        $this->assertTrue($circuit->isOpen());
+
+        Livewire::test(Health::class)
+            ->assertSee('موقتاً متوقف است')
+            ->call('resetCircuit')
+            ->assertSee('فعال');
+
+        $this->assertFalse($circuit->isOpen());
     }
 
     public function test_customer_contact_details_are_saved(): void
