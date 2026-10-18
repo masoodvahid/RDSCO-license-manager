@@ -88,6 +88,25 @@ class AppDirectoryTest extends TestCase
             ->assertJsonPath('data.employer.api_base_url', 'https://hrm.demo.fishino.ir/api/v1');
     }
 
+    public function test_an_api_path_saved_in_the_address_is_not_doubled(): void
+    {
+        $license = $this->fishinoLicense(['app_url' => 'https://hrm.payamnasr.com/api/v1/']);
+
+        $this->postJson(self::PATH, ['code' => $license->code, 'product' => 'fishino'])
+            ->assertOk()
+            ->assertJsonPath('data.employer.api_base_url', 'https://hrm.payamnasr.com/api/v1');
+    }
+
+    public function test_an_old_http_address_is_refused(): void
+    {
+        $license = $this->fishinoLicense(['app_url' => 'http://hrm.payamnasr.com']);
+
+        $this->postJson(self::PATH, ['code' => $license->code, 'product' => 'fishino'])
+            ->assertStatus(409)
+            ->assertJsonPath('error.code', 'employer_misconfigured')
+            ->assertJsonMissingPath('data');
+    }
+
     public function test_malformed_codes_fail_validation(): void
     {
         $this->postJson(self::PATH, ['code' => '12ab56', 'product' => 'fishino'])

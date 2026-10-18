@@ -77,10 +77,17 @@ class AppDirectoryController extends Controller
             return ApiResponse::error('employer_inactive', 'سرویس این کارفرما در حال حاضر فعال نیست. با واحد منابع انسانی تماس بگیرید.', 403);
         }
 
+        $appUrl = self::appRoot((string) $license->appUrl());
+
+        // Addresses saved before the form required https cannot be used by the app.
+        if (! str_starts_with($appUrl, 'https://')) {
+            return ApiResponse::error('employer_misconfigured', 'آدرس سامانه این کارفرما برای اپ موبایل تنظیم نشده است. با پشتیبانی تماس بگیرید.', 409);
+        }
+
         $employer = [
             'name' => (string) $license->customer->display_name,
-            'app_url' => (string) $license->appUrl(),
-            'api_base_url' => $license->appUrl().self::API_PATH,
+            'app_url' => $appUrl,
+            'api_base_url' => $appUrl.self::API_PATH,
         ];
 
         return ApiResponse::success([
@@ -98,6 +105,15 @@ class AppDirectoryController extends Controller
                 'iat' => time(),
             ]),
         ]);
+    }
+
+    /**
+     * The address without a trailing "/api" or "/api/vN" someone may have
+     * saved, so the API path is never doubled.
+     */
+    private static function appRoot(string $url): string
+    {
+        return rtrim((string) preg_replace('#/api(/v\d+)?/?$#i', '', rtrim($url, '/')), '/');
     }
 
     /**

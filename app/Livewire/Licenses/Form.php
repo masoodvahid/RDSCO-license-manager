@@ -80,7 +80,7 @@ class Form extends Component
             'customer_id' => ['required', Rule::exists('customers', 'id')->whereNull('deleted_at')],
             'product_id' => ['required', Rule::exists('products', 'id')],
             'label' => ['nullable', 'string', 'max:255'],
-            'app_url' => ['nullable', 'string', 'max:255', 'regex:/^(https?:\/\/)?[^\s\/$.?#][^\s]*\.[^\s]{2,}$/i'],
+            'app_url' => ['nullable', 'string', 'max:255'],
             'max_users' => ['nullable', 'integer', 'min:1', 'max:1000000'],
             'status' => ['required', Rule::enum(LicenseStatus::class)],
             'notes' => ['nullable', 'string', 'max:5000'],
@@ -89,9 +89,7 @@ class Form extends Component
             'allowed_domains' => ['nullable', 'string', 'max:5000'],
             'allowed_ips' => ['nullable', 'string', 'max:5000'],
             'features' => ['nullable', 'string', 'max:5000'],
-        ], [
-            'app_url.regex' => 'آدرس معتبر نیست؛ مثلاً https://fishino.example.com',
-        ], [
+        ], attributes: [
             'customer_id' => 'مشتری',
             'product_id' => 'محصول',
             'max_users' => 'تعداد کاربر',
@@ -108,7 +106,7 @@ class Form extends Component
             'customer_id' => (int) $this->customer_id,
             'product_id' => (int) $this->product_id,
             'label' => trim($this->label) ?: null,
-            'app_url' => rtrim(trim($this->app_url), '/') ?: null,
+            'app_url' => $this->appUrl(),
             'allowed_domains' => $this->domains(),
             'allowed_ips' => $this->ips(),
             'max_users' => $this->max_users === '' ? null : (int) $this->max_users,
@@ -139,6 +137,43 @@ class Form extends Component
         }
 
         $this->redirectRoute('licenses.show', $license, navigate: true);
+    }
+
+    /**
+     * Root address of the customer's installation, always https. The mobile
+     * app appends the API path itself, so a pasted ".../api/v1" is dropped
+     * instead of ending up as ".../api/v1/api/v1". A sub-folder install
+     * (https://example.com/fishino) keeps its path.
+     */
+    private function appUrl(): ?string
+    {
+        $value = trim($this->app_url);
+
+        if ($value === '') {
+            return null;
+        }
+
+        if (! str_contains($value, '://')) {
+            $value = 'https://'.$value;
+        }
+
+        $parts = parse_url($value);
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        $host = strtolower((string) ($parts['host'] ?? ''));
+
+        if ($scheme === 'http') {
+            throw ValidationException::withMessages(['app_url' => 'آدرس باید با https باشد؛ اپ موبایل به آدرس http متصل نمی‌شود. ابتدا SSL را روی دامنه مشتری فعال کنید.']);
+        }
+
+        if ($scheme !== 'https' || preg_match('/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/', $host) !== 1
+            || isset($parts['user']) || isset($parts['query']) || isset($parts['fragment'])) {
+            throw ValidationException::withMessages(['app_url' => 'آدرس معتبر نیست؛ مثلاً https://fishino.example.com']);
+        }
+
+        $path = (string) preg_replace('#/api(/v\d+)?/?$#i', '', rtrim((string) ($parts['path'] ?? ''), '/'));
+        $port = isset($parts['port']) ? ':'.$parts['port'] : '';
+
+        return 'https://'.$host.$port.rtrim($path, '/');
     }
 
     /**

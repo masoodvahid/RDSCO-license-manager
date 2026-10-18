@@ -344,4 +344,34 @@ class PanelActionsTest extends TestCase
         $this->assertTrue(auth()->user()->fresh()->hasTwoFactorEnabled());
         $this->assertCount(8, $component->get('recoveryCodes'));
     }
+
+    public function test_the_app_address_is_saved_as_an_https_root(): void
+    {
+        $license = License::factory()->create();
+
+        $cases = [
+            'hrm.payamnasr.com/api/v1' => 'https://hrm.payamnasr.com',
+            'https://HRM.payamnasr.com/api/' => 'https://hrm.payamnasr.com',
+            'https://example.com/fishino/' => 'https://example.com/fishino',
+            'https://hrm.example.com:8443' => 'https://hrm.example.com:8443',
+        ];
+
+        foreach ($cases as $input => $saved) {
+            Livewire::test(LicenseForm::class, ['license' => $license->fresh()])
+                ->set('app_url', $input)
+                ->call('save')
+                ->assertHasNoErrors();
+
+            $this->assertSame($saved, $license->fresh()->app_url, $input);
+        }
+
+        foreach (['http://hrm.payamnasr.com', 'https://hrm.payamnasr.com/?x=1', 'https://user:pass@hrm.example.com', 'not a url'] as $input) {
+            Livewire::test(LicenseForm::class, ['license' => $license->fresh()])
+                ->set('app_url', $input)
+                ->call('save')
+                ->assertHasErrors('app_url');
+        }
+
+        $this->assertSame('https://hrm.example.com:8443', $license->fresh()->app_url);
+    }
 }
