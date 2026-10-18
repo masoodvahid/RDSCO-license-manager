@@ -11,6 +11,9 @@
         ['validation_failed', 422, 'داده‌ها معتبر نیست؛ جزئیات در error.fields.'],
         ['payload_too_large', 413, 'بدنه درخواست بیش از ۶۴ کیلوبایت است.'],
         ['rate_limited', 429, 'بیش از سقف درخواست؛ هدر Retry-After را رعایت کنید.'],
+        ['code_not_found', 404, 'کد کارفرما (کد لایسنس) وجود ندارد، برای این محصول نیست یا آدرس سامانه ندارد.'],
+        ['employer_inactive', 403, 'لایسنس کارفرما فعال نیست؛ آدرس API برگردانده نمی‌شود.'],
+        ['employer_misconfigured', 409, 'آدرس سامانه لایسنس https نیست (ذخیره‌شده پیش از اجباری شدن https)؛ باید در پنل اصلاح شود.'],
         ['shahkar_*', '502 / 503 / 504', 'شاهکار یا سیتاد پاسخ قطعی نداد؛ error.retryable را ببینید. هزینه‌ای ثبت نمی‌شود.'],
         ['shahkar_circuit_open', 503, 'سیتاد چند بار پشت سر هم پاسخ نداده و استعلام‌ها موقتاً (حدود ۳۰ ثانیه) بدون انتظار رد می‌شوند. کمی بعد دوباره تلاش کنید.'],
         ['maintenance', 503, 'سامانه در حال بروزرسانی است.'],
@@ -111,6 +114,13 @@ PHP) !!}
         <x-card title="POST /api/v1/errors — ثبت خطای برنامه">
             {!! $code('{"message": "SQLSTATE[HY000] ...", "level": "error", "exception_class": "PDOException", "file": "/app/x.php", "line": 42, "trace": "...", "context": {"order_id": 7}, "url": "https://...", "environment": "production", "app_version": "2.4.0"}') !!}
             <p class="mt-2">فقط <span class="ltr-value">message</span> الزامی است. خطاهای یکسان (کلاس، فایل، خط و شکل پیام) گروه‌بندی و شمرده می‌شوند. کلیدهای حساس در context پوشانده می‌شوند.</p>
+        </x-card>
+
+        <x-card title="POST /api/v1/app/resolve — کد کارفرمای اپ موبایل">
+            <p>بدون احراز هویت. اپ موبایل در اولین اجرا کد ۶ رقمی کارفرما را می‌فرستد و نام کارفرما و آدرس API نصب اختصاصی او را می‌گیرد. کد همان «کد لایسنس» است و آدرس از «آدرس سامانه» لایسنس ساخته می‌شود (<span class="ltr-value">app_url + /api/v1</span>)؛ لایسنس بدون آدرس سامانه از اپ قابل اتصال نیست. <span class="ltr-value">challenge</span> را تصادفی بسازید و در توکن بررسی کنید.</p>
+            {!! $code('{"code": "482913", "product": "fishino", "challenge": "Zx81kd0QpLm2Vb7n"}') !!}
+            {!! $code('{"ok": true, "data": {"code": "482913", "product": "fishino", "employer": {"name": "شرکت پیام نصر", "app_url": "https://hrm.payamnasr.com", "api_base_url": "https://hrm.payamnasr.com/api/v1"}, "token": "rdl1.eyJ....sig"}}') !!}
+            <p class="mt-4">اپ فقط به محتوای توکن امضاشده اعتماد کند (<span class="ltr-value">typ = app_directory</span>، <span class="ltr-value">code</span>، <span class="ltr-value">prd</span>، <span class="ltr-value">name</span>، <span class="ltr-value">url</span>، <span class="ltr-value">chl</span>). فقط کدهای نادرست شمرده می‌شوند: پس از {{ config('license.rate_limits.app_code_failures_per_minute') }} تلاش نادرست در دقیقه یا {{ config('license.rate_limits.app_code_failures_per_hour') }} در ساعت، IP موقتاً مسدود می‌شود.</p>
         </x-card>
 
         <x-card title="مسیرهای عمومی">

@@ -74,6 +74,10 @@ return [
         'shahkar' => (int) env('LICENSE_RATE_SHAHKAR', 60),
         'errors' => (int) env('LICENSE_RATE_ERRORS', 60),
         'per_ip' => (int) env('LICENSE_RATE_PER_IP', 600),
+        // Wrong employer codes typed in the mobile app, per IP. Only failures
+        // count: a whole office behind one NAT may set up the app at once.
+        'app_code_failures_per_minute' => (int) env('APP_CODE_FAILURES_PER_MINUTE', 10),
+        'app_code_failures_per_hour' => (int) env('APP_CODE_FAILURES_PER_HOUR', 30),
     ],
 
     /*

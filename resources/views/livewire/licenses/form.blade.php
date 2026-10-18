@@ -9,7 +9,7 @@
                 <x-select name="customer_id" label="مشتری" :options="$customers" placeholder="انتخاب مشتری" required />
                 <x-select name="product_id" label="محصول" :options="$products" placeholder="انتخاب محصول" required />
                 <x-input name="label" label="برچسب" hint="مثلاً «سرور اصلی» یا «شعبه تهران»؛ برای تشخیص چند لایسنس یک مشتری." />
-                <x-input name="app_url" label="آدرس اجرای سامانه" placeholder="https://fishino.example.com" hint="آدرسی که نرم‌افزار مشتری روی آن اجرا می‌شود." ltr />
+                <x-input name="app_url" label="آدرس اجرای سامانه" placeholder="https://fishino.example.com" hint="آدرسی که نرم‌افزار مشتری روی آن اجرا می‌شود؛ فقط https و بدون /api. اپ موبایل با کد لایسنس به همین آدرس وصل می‌شود." ltr />
             </div>
         </x-card>
 
