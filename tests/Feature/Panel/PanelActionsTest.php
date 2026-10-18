@@ -93,6 +93,33 @@ class PanelActionsTest extends TestCase
             ->assertDontSee('ref-a');
     }
 
+    public function test_every_license_gets_a_unique_six_digit_code_and_keeps_it(): void
+    {
+        $licenses = License::factory()->count(20)->create();
+        $codes = $licenses->pluck('code');
+
+        $this->assertCount(20, $codes->unique());
+        $codes->each(fn (string $code) => $this->assertMatchesRegularExpression('/^[1-9]\d{5}$/', $code));
+
+        $license = $licenses->first();
+
+        Livewire::test(LicenseForm::class, ['license' => $license])
+            ->set('app_url', 'https://fishino.example.com/')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $license->refresh();
+        $this->assertSame('https://fishino.example.com', $license->app_url);
+        $this->assertSame($codes->first(), $license->code, 'Editing must not change the code.');
+
+        Livewire::test(LicenseForm::class, ['license' => $license])
+            ->set('app_url', 'not a url')
+            ->call('save')
+            ->assertHasErrors('app_url');
+
+        $this->assertSame($license->id, License::query()->search($license->code)->sole()->id);
+    }
+
     public function test_customer_contact_details_are_saved(): void
     {
         Livewire::test(CustomerForm::class)

@@ -73,7 +73,7 @@ PHP) !!}
     "valid": true,
     "reason": null,
     "message": "لایسنس معتبر است.",
-    "license": {"key_id": "lk_...", "customer": "...", "product": "rahkar-crm", "max_users": 10,
+    "license": {"key_id": "lk_...", "code": "482915", "app_url": "https://fishino.example.com", "customer": "...", "product": "rahkar-crm", "max_users": 10,
                 "features": {"reports": true}, "starts_at": "2026-03-21", "expires_at": "2027-03-20", "days_remaining": 158},
     "offline_until": "2026-10-16T12:00:00+03:30",
     "server_time": 1760000000,

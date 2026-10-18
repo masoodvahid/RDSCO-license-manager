@@ -54,6 +54,8 @@ class LicenseController extends Controller
 
         $licenseData = [
             'key_id' => $license->keyId,
+            'code' => $license->code,
+            'app_url' => $license->appUrl,
             'customer' => $license->customerName,
             'product' => $license->productSlug,
             'max_users' => $license->maxUsers,

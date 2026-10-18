@@ -41,7 +41,7 @@ class LicenseCache
 
     private function cacheKey(string $keyId): string
     {
-        return 'license:'.hash('sha256', $keyId);
+        return 'license:v2:'.hash('sha256', $keyId);
     }
 
     private function store(): Repository

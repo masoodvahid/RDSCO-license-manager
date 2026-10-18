@@ -23,6 +23,7 @@ class LicenseVerifyTest extends TestCase
         $license = License::factory()->create([
             'allowed_domains' => ['crm.example.com'],
             'features' => ['reports' => true],
+            'app_url' => 'crm.example.com',
         ]);
 
         $response = $this->signedJson($license, 'POST', self::PATH, [
@@ -37,7 +38,11 @@ class LicenseVerifyTest extends TestCase
             ->assertJsonPath('data.valid', true)
             ->assertJsonPath('data.reason', null)
             ->assertJsonPath('data.license.key_id', $license->key_id)
-            ->assertJsonPath('data.license.features.reports', true);
+            ->assertJsonPath('data.license.features.reports', true)
+            ->assertJsonPath('data.license.code', $license->code)
+            ->assertJsonPath('data.license.app_url', 'https://crm.example.com');
+
+        $this->assertMatchesRegularExpression('/^[1-9]\d{5}$/', $license->code);
 
         $claims = LicenseTokenIssuer::verify($response->json('data.token'), app(SigningKey::class)->publicKey());
 

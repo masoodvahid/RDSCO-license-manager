@@ -28,6 +28,7 @@ class License extends Model
         'customer_id',
         'product_id',
         'label',
+        'app_url',
         'allowed_domains',
         'allowed_ips',
         'max_users',
@@ -63,6 +64,7 @@ class License extends Model
         static::creating(function (License $license): void {
             $license->key_id ??= static::generateKeyId();
             $license->secret ??= static::generateSecret();
+            $license->code ??= static::generateCode();
         });
 
         static::saved(fn (License $license) => $license->forgetCache());
@@ -72,6 +74,35 @@ class License extends Model
     public static function generateKeyId(): string
     {
         return 'lk_'.bin2hex(random_bytes(10));
+    }
+
+    /**
+     * Random 6-digit code that no other license uses (no leading zero, so it
+     * survives being typed into numeric fields).
+     */
+    public static function generateCode(): string
+    {
+        for ($attempt = 0; $attempt < 50; $attempt++) {
+            $code = (string) random_int(100000, 999999);
+
+            if (! static::query()->where('code', $code)->exists()) {
+                return $code;
+            }
+        }
+
+        throw new \RuntimeException('Could not allocate a unique license code.');
+    }
+
+    /**
+     * The app address as a clickable absolute URL.
+     */
+    public function appUrl(): ?string
+    {
+        if (blank($this->app_url)) {
+            return null;
+        }
+
+        return preg_match('#^https?://#i', $this->app_url) === 1 ? $this->app_url : 'https://'.$this->app_url;
     }
 
     public static function generateSecret(): string
@@ -154,7 +185,9 @@ class License extends Model
 
         return $query->where(function (Builder $query) use ($term): void {
             $query->where('key_id', 'like', "%{$term}%")
+                ->orWhere('code', $term)
                 ->orWhere('label', 'like', "%{$term}%")
+                ->orWhere('app_url', 'like', "%{$term}%")
                 ->orWhereHas('customer', fn (Builder $customer) => $customer->search($term));
         });
     }

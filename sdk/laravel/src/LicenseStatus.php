@@ -46,6 +46,22 @@ final class LicenseStatus
         return isset($this->license['max_users']) ? (int) $this->license['max_users'] : null;
     }
 
+    /**
+     * The license's 6-digit code (e.g. for pairing the mobile app).
+     */
+    public function code(): ?string
+    {
+        return isset($this->license['code']) ? (string) $this->license['code'] : null;
+    }
+
+    /**
+     * The installation address registered for this license.
+     */
+    public function appUrl(): ?string
+    {
+        return isset($this->license['app_url']) ? (string) $this->license['app_url'] : null;
+    }
+
     public function expiresAt(): ?string
     {
         return $this->license['expires_at'] ?? null;

@@ -28,6 +28,8 @@ class Form extends Component
 
     public string $label = '';
 
+    public string $app_url = '';
+
     public string $allowed_domains = '';
 
     public string $allowed_ips = '';
@@ -54,6 +56,7 @@ class Form extends Component
             $this->customer_id = (string) $license->customer_id;
             $this->product_id = (string) $license->product_id;
             $this->label = (string) $license->label;
+            $this->app_url = (string) $license->app_url;
             $this->allowed_domains = implode("\n", $license->allowed_domains ?? []);
             $this->allowed_ips = implode("\n", $license->allowed_ips ?? []);
             $this->max_users = (string) ($license->max_users ?? '');
@@ -77,6 +80,7 @@ class Form extends Component
             'customer_id' => ['required', Rule::exists('customers', 'id')->whereNull('deleted_at')],
             'product_id' => ['required', Rule::exists('products', 'id')],
             'label' => ['nullable', 'string', 'max:255'],
+            'app_url' => ['nullable', 'string', 'max:255', 'regex:/^(https?:\/\/)?[^\s\/$.?#][^\s]*\.[^\s]{2,}$/i'],
             'max_users' => ['nullable', 'integer', 'min:1', 'max:1000000'],
             'status' => ['required', Rule::enum(LicenseStatus::class)],
             'notes' => ['nullable', 'string', 'max:5000'],
@@ -85,7 +89,9 @@ class Form extends Component
             'allowed_domains' => ['nullable', 'string', 'max:5000'],
             'allowed_ips' => ['nullable', 'string', 'max:5000'],
             'features' => ['nullable', 'string', 'max:5000'],
-        ], attributes: [
+        ], [
+            'app_url.regex' => 'آدرس معتبر نیست؛ مثلاً https://fishino.example.com',
+        ], [
             'customer_id' => 'مشتری',
             'product_id' => 'محصول',
             'max_users' => 'تعداد کاربر',
@@ -102,6 +108,7 @@ class Form extends Component
             'customer_id' => (int) $this->customer_id,
             'product_id' => (int) $this->product_id,
             'label' => trim($this->label) ?: null,
+            'app_url' => rtrim(trim($this->app_url), '/') ?: null,
             'allowed_domains' => $this->domains(),
             'allowed_ips' => $this->ips(),
             'max_users' => $this->max_users === '' ? null : (int) $this->max_users,

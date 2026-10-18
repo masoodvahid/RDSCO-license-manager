@@ -92,6 +92,8 @@ $status->feature('branches', 1);   // مقدار قابلیت
 $status->hasFeature('reports');    // true/false
 $status->maxUsers();               // حداکثر کاربر یا null
 $status->daysRemaining();          // روزهای باقی‌مانده تا انقضا
+$status->code();                   // کد ۶ رقمی لایسنس
+$status->appUrl();                 // آدرس اجرای سامانه که در پنل ثبت شده
 ```
 
 برای اعمال سقف کاربر:

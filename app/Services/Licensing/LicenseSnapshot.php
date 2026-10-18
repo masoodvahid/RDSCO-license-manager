@@ -41,6 +41,8 @@ final readonly class LicenseSnapshot
         public ?string $startsAt,
         public ?string $expiresAt,
         public array $serviceCodes,
+        public ?string $code = null,
+        public ?string $appUrl = null,
     ) {}
 
     public static function fromModel(License $license): self
@@ -66,6 +68,8 @@ final readonly class LicenseSnapshot
             startsAt: $license->starts_at?->toDateString(),
             expiresAt: $license->expires_at?->toDateString(),
             serviceCodes: $license->services->where('is_active', true)->pluck('code')->values()->all(),
+            code: $license->code,
+            appUrl: $license->appUrl(),
         );
     }
 

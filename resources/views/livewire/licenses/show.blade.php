@@ -111,6 +111,20 @@
                 <dl class="space-y-3 text-sm">
                     <div class="flex justify-between gap-4"><dt class="text-gray-500">مشتری</dt><dd><a href="{{ route('customers.show', $license->customer) }}" wire:navigate class="link">{{ $license->customer?->display_name }}</a></dd></div>
                     <div class="flex justify-between gap-4"><dt class="text-gray-500">محصول</dt><dd class="text-gray-800">{{ $license->product?->name }}</dd></div>
+                    <div class="flex items-center justify-between gap-4">
+                        <dt class="text-gray-500">کد لایسنس</dt>
+                        <dd><x-copy :value="(string) $license->code" class="font-mono text-base font-semibold tracking-widest text-gray-900" /></dd>
+                    </div>
+                    <div class="flex justify-between gap-4">
+                        <dt class="text-gray-500">آدرس سامانه</dt>
+                        <dd class="min-w-0 truncate">
+                            @if ($license->appUrl())
+                                <a href="{{ $license->appUrl() }}" target="_blank" rel="noopener noreferrer" class="link ltr-value">{{ preg_replace('#^https?://#i', '', $license->app_url) }}</a>
+                            @else
+                                <span class="text-gray-400">—</span>
+                            @endif
+                        </dd>
+                    </div>
                     <div class="flex justify-between gap-4"><dt class="text-gray-500">شروع</dt><dd class="text-gray-800">{{ $license->starts_at ? Jalali::date($license->starts_at) : '—' }}</dd></div>
                     <div class="flex justify-between gap-4">
                         <dt class="text-gray-500">انقضا</dt>

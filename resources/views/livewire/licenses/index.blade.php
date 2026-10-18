@@ -11,7 +11,7 @@
         <div class="flex flex-col gap-3 border-b border-gray-100 p-4 sm:flex-row">
             <div class="relative flex-1">
                 <x-heroicon-o-magnifying-glass class="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
-                <input type="search" wire:model.live.debounce.400ms="search" placeholder="شناسه کلید، برچسب یا نام مشتری" class="field pr-9">
+                <input type="search" wire:model.live.debounce.400ms="search" placeholder="کد، شناسه کلید، برچسب، آدرس یا نام مشتری" class="field pr-9">
             </div>
             <select wire:model.live="product" class="field sm:w-48">
                 <option value="">همه محصولات</option>
@@ -32,7 +32,7 @@
         @else
             <div class="overflow-x-auto">
                 <table class="table-base">
-                    <thead><tr><th>مشتری</th><th>محصول</th><th>شناسه کلید</th><th>انقضا</th><th>آخرین اتصال</th><th>وضعیت</th></tr></thead>
+                    <thead><tr><th>مشتری</th><th>محصول</th><th>کد</th><th>شناسه کلید</th><th>انقضا</th><th>آخرین اتصال</th><th>وضعیت</th></tr></thead>
                     <tbody>
                         @foreach ($licenses as $license)
                             @php($days = $license->daysUntilExpiry())
@@ -41,7 +41,11 @@
                                     <a href="{{ route('licenses.show', $license) }}" wire:navigate class="font-medium text-gray-900 hover:text-brand-700">{{ $license->customer?->display_name }}</a>
                                     @if ($license->label)<div class="text-xs text-gray-500">{{ $license->label }}</div>@endif
                                 </td>
-                                <td>{{ $license->product?->name }}</td>
+                                <td>
+                                    {{ $license->product?->name }}
+                                    @if ($license->app_url)<div class="ltr-value max-w-48 truncate text-xs text-gray-500">{{ preg_replace('#^https?://#i', '', $license->app_url) }}</div>@endif
+                                </td>
+                                <td><span class="font-mono text-gray-800">{{ $license->code }}</span></td>
                                 <td><span class="ltr-value text-gray-600">{{ $license->key_id }}</span></td>
                                 <td>
                                     @if ($license->expires_at)
