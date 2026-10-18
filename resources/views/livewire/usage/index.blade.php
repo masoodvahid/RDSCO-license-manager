@@ -32,7 +32,8 @@
             </select>
             <input type="text" dir="ltr" wire:model.live.debounce.600ms="from" placeholder="از تاریخ 1405/01/01" class="field text-left">
             <input type="text" dir="ltr" wire:model.live.debounce.600ms="to" placeholder="تا تاریخ 1405/01/31" class="field text-left">
-            <div class="flex items-center gap-2 lg:col-span-2">
+            <input type="text" dir="ltr" inputmode="numeric" wire:model.live.debounce.600ms="subject" placeholder="کد ملی یا شماره همراه" class="field text-left placeholder:text-right">
+            <div class="flex items-center gap-2">
                 @if ($license !== '')
                     <x-badge color="info">فیلتر یک لایسنس</x-badge>
                 @endif
@@ -51,7 +52,7 @@
         @else
             <div class="overflow-x-auto">
                 <table class="table-base">
-                    <thead><tr><th>زمان</th><th>مشتری</th><th>سرویس</th><th>نتیجه</th><th>مبلغ</th><th>فاکتور</th><th>پیگیری</th></tr></thead>
+                    <thead><tr><th>زمان</th><th>مشتری</th><th>سرویس</th><th>کد ملی / همراه</th><th>نتیجه</th><th>مبلغ</th><th>فاکتور</th><th>پیگیری</th></tr></thead>
                     <tbody>
                         @foreach ($records as $record)
                             <tr wire:key="usage-{{ $record->id }}">
@@ -61,6 +62,14 @@
                                     <a href="{{ route('licenses.show', $record->license_id) }}" wire:navigate class="ltr-value text-xs text-gray-500 hover:text-brand-700">{{ $record->license?->key_id }}</a>
                                 </td>
                                 <td>{{ $record->service?->name }}</td>
+                                <td class="text-xs leading-5">
+                                    @if ($record->national_code || $record->mobile)
+                                        <div class="ltr-value text-gray-800">{{ $record->national_code ?? '—' }}</div>
+                                        <div class="ltr-value text-gray-500">{{ $record->mobile ?? '—' }}</div>
+                                    @else
+                                        <span class="text-gray-400">—</span>
+                                    @endif
+                                </td>
                                 <td>
                                     <x-badge :color="$record->status->color()">{{ $record->status->label() }}</x-badge>
                                     @if ($record->upstream_code !== null)

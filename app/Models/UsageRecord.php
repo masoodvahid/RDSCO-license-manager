@@ -23,6 +23,10 @@ class UsageRecord extends Model
         'unit_price',
         'reference',
         'client_reference',
+        'national_code',
+        'mobile',
+        'national_code_hash',
+        'mobile_hash',
         'upstream_code',
         'upstream_message',
         'duration_ms',
@@ -34,10 +38,35 @@ class UsageRecord extends Model
             'status' => UsageStatus::class,
             'billable' => 'boolean',
             'unit_price' => 'integer',
+            'national_code' => 'encrypted',
+            'mobile' => 'encrypted',
             'upstream_code' => 'integer',
             'duration_ms' => 'integer',
             'created_at' => 'datetime',
         ];
+    }
+
+    protected $hidden = [
+        'national_code',
+        'mobile',
+        'national_code_hash',
+        'mobile_hash',
+    ];
+
+    /**
+     * Keyed hash used to search encrypted national codes and mobiles.
+     */
+    public static function lookupHash(string $value): string
+    {
+        return hash_hmac('sha256', $value, 'usage-subject|'.config('app.key'));
+    }
+
+    /**
+     * 09121234567 -> 0912***4567, for places where the full number is not needed.
+     */
+    public function maskedMobile(): ?string
+    {
+        return $this->mobile === null ? null : substr($this->mobile, 0, 4).'***'.substr($this->mobile, -4);
     }
 
     public function customer(): BelongsTo

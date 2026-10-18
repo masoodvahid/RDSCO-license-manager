@@ -105,6 +105,7 @@ PHP) !!}
             {!! $code('{"national_code": "0499370899", "mobile": "09123456789", "reference": "signup-1234"}') !!}
             {!! $code('{"ok": true, "data": {"matched": true, "code": 200, "message": "...", "tracking_id": "050120260101...", "reference": "signup-1234", "charged": true, "replayed": false}}') !!}
             <p class="mt-4">فقط پاسخ‌های قطعی (<span class="ltr-value">matched</span> برابر true یا false) هزینه دارند.</p>
+            <p class="mt-2">کد ملی و شماره همراه هر استعلام برای گزارش مصرف، به صورت رمزنگاری‌شده در سامانه نگهداری می‌شود.</p>
         </x-card>
 
         <x-card title="POST /api/v1/errors — ثبت خطای برنامه">

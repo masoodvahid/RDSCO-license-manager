@@ -77,6 +77,8 @@ class ShahkarController extends Controller
             upstreamCode: $result->code,
             durationMs: $result->durationMs,
             upstreamMessage: $result->message,
+            nationalCode: $input['national_code'],
+            mobile: $input['mobile'],
         );
 
         $this->activity->touchLastSeen($license, $request->ip(), null);

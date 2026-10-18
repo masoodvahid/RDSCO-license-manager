@@ -12,6 +12,7 @@ use App\Services\Shahkar\ShahkarCircuit;
 use App\Services\Shahkar\ShahkarEncryptor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -83,6 +84,15 @@ class ShahkarApiTest extends TestCase
         $this->assertSame(UsageStatus::Success, $record->status);
         $this->assertTrue($record->billable);
         $this->assertSame(9_000, $record->unit_price);
+
+        // The checked person is kept for the usage report, encrypted at rest and searchable by hash.
+        $this->assertSame(self::NATIONAL_CODE, $record->national_code);
+        $this->assertSame('09123456789', $record->mobile);
+        $raw = DB::table('usage_records')->where('id', $record->id)->first();
+        $this->assertStringNotContainsString(self::NATIONAL_CODE, (string) $raw->national_code);
+        $this->assertStringNotContainsString('09123456789', (string) $raw->mobile);
+        $this->assertSame(UsageRecord::lookupHash('09123456789'), $raw->mobile_hash);
+        $this->assertArrayNotHasKey('national_code', $record->toArray());
 
         Http::assertSent(function (Request $request): bool {
             if ($request->url() !== self::VERIFY_URL) {

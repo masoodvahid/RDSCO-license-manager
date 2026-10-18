@@ -23,6 +23,8 @@ class UsageRecorder
         ?int $upstreamCode = null,
         ?int $durationMs = null,
         ?string $upstreamMessage = null,
+        ?string $nationalCode = null,
+        ?string $mobile = null,
     ): UsageRecord {
         return UsageRecord::query()->create([
             'customer_id' => $license->customerId,
@@ -33,6 +35,10 @@ class UsageRecorder
             'unit_price' => $billable ? $service->priceFor($license->customerId) : 0,
             'reference' => $reference,
             'client_reference' => $clientReference,
+            'national_code' => $nationalCode,
+            'mobile' => $mobile,
+            'national_code_hash' => $nationalCode === null ? null : UsageRecord::lookupHash($nationalCode),
+            'mobile_hash' => $mobile === null ? null : UsageRecord::lookupHash($mobile),
             'upstream_code' => $upstreamCode,
             'upstream_message' => $upstreamMessage === null ? null : mb_substr($upstreamMessage, 0, 255),
             'duration_ms' => $durationMs,

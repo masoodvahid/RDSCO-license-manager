@@ -14,6 +14,7 @@ use App\Livewire\Licenses\Show as LicenseShow;
 use App\Livewire\Payments\Index as Payments;
 use App\Livewire\Settings\Shahkar as ShahkarSettingsPage;
 use App\Livewire\System\Health;
+use App\Livewire\Usage\Index;
 use App\Models\ActivityLog;
 use App\Models\Customer;
 use App\Models\Invoice;
@@ -22,6 +23,8 @@ use App\Models\Product;
 use App\Models\Service;
 use App\Models\Setting;
 use App\Models\UsageRecord;
+use App\Services\Billing\UsageRecorder;
+use App\Services\Licensing\LicenseSnapshot;
 use App\Services\Shahkar\ShahkarCircuit;
 use App\Support\Jalali;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -67,6 +70,27 @@ class PanelActionsTest extends TestCase
             ->assertSee('فعال');
 
         $this->assertFalse($circuit->isOpen());
+    }
+
+    public function test_usage_can_be_searched_by_national_code_or_mobile(): void
+    {
+        $license = License::factory()->create();
+        $service = Service::byCode(Service::SHAHKAR);
+        $recorder = app(UsageRecorder::class);
+        $snapshot = LicenseSnapshot::fromModel($license->load(['customer', 'product', 'services']));
+
+        $recorder->record($snapshot, $service, UsageStatus::Success, true, reference: 'ref-a', nationalCode: '0499370899', mobile: '09121111111');
+        $recorder->record($snapshot, $service, UsageStatus::Failed, true, reference: 'ref-b', nationalCode: '0012345679', mobile: '09122222222');
+
+        Livewire::test(Index::class)
+            ->assertSee('0499370899')
+            ->assertSee('09122222222')
+            ->set('subject', '۰۴۹۹۳۷۰۸۹۹')
+            ->assertSee('ref-a')
+            ->assertDontSee('ref-b')
+            ->set('subject', '+98 912 222 2222')
+            ->assertSee('ref-b')
+            ->assertDontSee('ref-a');
     }
 
     public function test_customer_contact_details_are_saved(): void

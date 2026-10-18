@@ -3,9 +3,11 @@
 namespace App\Livewire\Usage;
 
 use App\Enums\UsageStatus;
+use App\Http\Controllers\Api\V1\ShahkarController;
 use App\Models\Customer;
 use App\Models\Service;
 use App\Models\UsageRecord;
+use App\Rules\IranianNationalCode;
 use App\Services\Shahkar\ShahkarResponseCodes;
 use App\Support\Jalali;
 use Illuminate\Database\Eloquent\Builder;
@@ -36,6 +38,10 @@ class Index extends Component
     #[Url(except: '')]
     public string $billing = '';
 
+    /** National code or mobile number. */
+    #[Url(except: '')]
+    public string $subject = '';
+
     #[Url(except: '')]
     public string $from = '';
 
@@ -49,7 +55,7 @@ class Index extends Component
 
     public function resetFilters(): void
     {
-        $this->reset(['customer', 'license', 'service', 'status', 'billing', 'from', 'to']);
+        $this->reset(['customer', 'license', 'service', 'status', 'billing', 'subject', 'from', 'to']);
         $this->resetPage();
     }
 
@@ -61,7 +67,7 @@ class Index extends Component
         return response()->streamDownload(function () use ($query, $codes): void {
             $output = fopen('php://output', 'w');
             fwrite($output, "\xEF\xBB\xBF"); // UTF-8 BOM for Excel
-            fputcsv($output, ['شناسه', 'تاریخ', 'مشتری', 'کلید لایسنس', 'سرویس', 'نتیجه', 'کد پاسخ', 'توضیح', 'مبلغ (ریال)', 'فاکتور', 'شماره پیگیری', 'مدت (ms)']);
+            fputcsv($output, ['شناسه', 'تاریخ', 'مشتری', 'کلید لایسنس', 'سرویس', 'کد ملی', 'شماره همراه', 'نتیجه', 'کد پاسخ', 'توضیح', 'مبلغ (ریال)', 'فاکتور', 'شماره پیگیری', 'مدت (ms)']);
 
             $query->chunkById(1000, function ($records) use ($output, $codes): void {
                 foreach ($records as $record) {
@@ -71,6 +77,8 @@ class Index extends Component
                         $record->customer?->display_name,
                         $record->license?->key_id,
                         $record->service?->name,
+                        $record->national_code,
+                        $record->mobile,
                         $record->status->label(),
                         $record->upstream_code,
                         $record->upstream_message ?? ($record->upstream_code !== null ? $codes->map($record->upstream_code)['message'] : ''),
@@ -84,6 +92,32 @@ class Index extends Component
 
             fclose($output);
         }, 'usage-'.now()->format('Ymd-His').'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    /**
+     * The subject search as [hash column, normalized value]: a valid national
+     * code, otherwise anything that normalizes to 09xxxxxxxxx is a mobile.
+     *
+     * @return array{0: string, 1: string}|null
+     */
+    private function subjectFilter(): ?array
+    {
+        $value = preg_replace('/\D+/', '', Jalali::toLatinDigits($this->subject)) ?? '';
+
+        if ($value === '') {
+            return null;
+        }
+
+        // A valid 10-digit national code wins over a mobile written without its leading zero.
+        if (strlen($value) <= 10 && IranianNationalCode::isValid(str_pad($value, 10, '0', STR_PAD_LEFT))) {
+            return ['national_code_hash', str_pad($value, 10, '0', STR_PAD_LEFT)];
+        }
+
+        $mobile = ShahkarController::normalizeMobile($value);
+
+        return preg_match('/^09\d{9}$/', $mobile) === 1
+            ? ['mobile_hash', $mobile]
+            : ['national_code_hash', str_pad($value, 10, '0', STR_PAD_LEFT)];
     }
 
     /**
@@ -102,6 +136,10 @@ class Index extends Component
             ->when($this->billing === 'uninvoiced', fn ($query) => $query->where('billable', true)->whereNull('invoice_id'))
             ->when($this->billing === 'invoiced', fn ($query) => $query->whereNotNull('invoice_id'))
             ->when($this->billing === 'free', fn ($query) => $query->where('billable', false))
+            ->when($this->subjectFilter() !== null, function ($query): void {
+                [$column, $value] = $this->subjectFilter();
+                $query->where($column, UsageRecord::lookupHash($value));
+            })
             ->when($from !== null, fn ($query) => $query->where('created_at', '>=', $from))
             ->when($to !== null, fn ($query) => $query->where('created_at', '<=', $to));
     }
